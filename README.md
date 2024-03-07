@@ -2,98 +2,71 @@
 This repository hosts a comprehensive automation framework designed for API and UI testing, built using Python and Behave. The framework provides a scalable and efficient solution for automating tests across different layers of your application stack, enabling seamless integration of API and UI testing in your development workflow.
 
 
+using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
+using System;
 
-    
-       
-   public SeleniumHelper()
+public class SeleniumHelper
 {
-    // Initialize WebDriver (in this example, using Chrome)
-    driver = new ChromeDriver();
-    // Initialize WebDriverWait with a timeout of 10 seconds
-    wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-}
+    private IWebDriver driver;
+    private WebDriverWait wait;
 
-public void NavigateToUrl(string url)
-{
-    try
+    public SeleniumHelper(IWebDriver driver)
     {
-        driver.Navigate().GoToUrl(url);
-        Console.WriteLine($"Navigated to URL: {url}");
+        this.driver = driver;
+        // Initialize WebDriverWait with a timeout of 10 seconds
+        wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error navigating to URL: {ex.Message}");
-        throw;
-    }
-}
 
-public T FindElement<T>(By locator) where T : IWebElement
-{
-    try
+    public T FindElement<T>(string pageName, By locator, LocatorType locatorType) where T : class
     {
-        T element = wait.Until(driver => driver.FindElement(locator) as T);
-        Console.WriteLine($"Element found: {locator}");
-        return element;
-    }
-    catch (WebDriverTimeoutException ex)
-    {
-        Console.WriteLine($"Timeout waiting for element: {locator}");
-        throw new TimeoutException($"Timeout waiting for element: {locator}", ex);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error finding element: {ex.Message}");
-        throw;
-    }
-}
+        try
+        {
+            IWebElement element = null;
+            switch (locatorType)
+            {
+                case LocatorType.Id:
+                    element = wait.Until(ExpectedConditions.ElementExists(By.Id(locator.ToString())));
+                    break;
+                case LocatorType.Name:
+                    element = wait.Until(ExpectedConditions.ElementExists(By.Name(locator.ToString())));
+                    break;
+                // Add cases for other locator types as needed
+                default:
+                    throw new ArgumentException($"Unsupported locator type: {locatorType}");
+            }
 
-public void Click(By locator)
-{
-    try
-    {
-        IWebElement element = FindElement<IWebElement>(locator);
-        element.Click();
-        Console.WriteLine($"Clicked on element: {locator}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error clicking on element: {ex.Message}");
-        throw;
-    }
-}
-
-public void WriteText(By locator, string text)
-{
-    try
-    {
-        IWebElement element = FindElement<IWebElement>(locator);
-        element.Clear();
-        element.SendKeys(text);
-        Console.WriteLine($"Entered text '{text}' into element: {locator}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error writing text: {ex.Message}");
-        throw;
+            // Convert the found IWebElement to the desired type T
+            T convertedElement = (T)Convert.ChangeType(element, typeof(T));
+            Console.WriteLine($"Element found on page '{pageName}': {locator}");
+            return convertedElement;
+        }
+        catch (NoSuchElementException ex)
+        {
+            Console.WriteLine($"Element not found on page '{pageName}': {locator}");
+            throw new NoSuchElementException($"Element not found on page '{pageName}': {locator}", ex);
+        }
+        catch (TimeoutException ex)
+        {
+            Console.WriteLine($"Timeout waiting for element on page '{pageName}': {locator}");
+            throw new TimeoutException($"Timeout waiting for element on page '{pageName}': {locator}", ex);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Unsupported locator type: {locatorType}");
+            throw new ArgumentException($"Unsupported locator type: {locatorType}", ex);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error finding element on page '{pageName}': {ex.Message}");
+            throw new Exception($"Error finding element on page '{pageName}': {ex.Message}", ex);
+        }
     }
 }
 
-public void WaitForElement(By locator)
+public enum LocatorType
 {
-    try
-    {
-        wait.Until(driver => driver.FindElement(locator));
-        Console.WriteLine($"Element waited for: {locator}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error waiting for element: {ex.Message}");
-        throw;
-    }
-}
-
-public void Close()
-{
-    driver.Quit();
-    Console.WriteLine("Browser closed");
+    Id,
+    Name,
+    // Add more locator types as needed
 }
