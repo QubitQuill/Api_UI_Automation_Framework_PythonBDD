@@ -117,3 +117,29 @@ public class SeleniumHelper
         Console.WriteLine("Browser closed");
     }
 }
+
+Sub GenerateAndIncrementNumbers()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1") 'Change "Sheet1" to your sheet's name
+    Dim startCell As Range
+    Set startCell = ws.Range("A1") 'Change "A1" to your starting cell
+    
+    Dim currentCell As Range
+    Dim currentNumber As Long
+    currentNumber = 1 ' Initial number to start with
+    
+    ' Loop through cells in column A
+    For Each currentCell In ws.Range(startCell, ws.Cells(ws.Rows.Count, startCell.Column).End(xlUp))
+        ' Check if "SIT" is found on the right-hand side (RHS) of the current cell value
+        If InStr(1, currentCell.Offset(0, 1).Value, "SIT", vbTextCompare) > 0 Then
+            currentNumber = currentNumber + 1
+        End If
+        ' Set the number in the current cell
+        currentCell.Value = currentNumber
+    Next currentCell
+End Sub
+
+
+
+
+
